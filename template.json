@@ -1,0 +1,12 @@
+{
+  "template_name": "golang-template",
+  "template_version": "0.1.0",
+  "description": "Standard project template for Go applications.",
+  "stack": {
+    "language": "go",
+    "language_version": "1.24"
+  },
+  "source_repository": "https://github.com/kevindowdy/golang-template",
+  "created_from_commit": null,
+  "created_at": "2026-09-02T00:00:00Z"
+}

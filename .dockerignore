@@ -1,0 +1,26 @@
+# Version control
+.git
+.gitignore
+.github
+
+# Docs
+*.md
+LICENSE
+
+# Tests
+tests/
+**/*_test.go
+
+# Build artifacts
+bin/
+dist/
+*.exe
+*.test
+*.out
+coverage.*
+
+# Local env / editor
+.env
+.editorconfig
+.vscode/
+.idea/

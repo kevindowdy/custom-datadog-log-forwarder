@@ -1,5 +1,5 @@
 // Package example demonstrates where internal, non-importable packages live.
-package example
+package ingestor
 
 // Greet returns a placeholder greeting.
 //

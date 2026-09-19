@@ -28,7 +28,7 @@ logic.
 Run the application directly:
 
 ```sh
-go run ./src/cmd/app
+go run ./src/main.go
 ```
 
 Build a binary:

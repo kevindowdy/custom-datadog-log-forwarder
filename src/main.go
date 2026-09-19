@@ -1,57 +1,58 @@
 // Package main is the entrypoint for the application binary.
 package main
 
-import (
-	"context"
-	"encoding/json"
-	"fmt"
-	"os"
+// Import log to report the run's outcome and any fatal startup error.
+import "log"
 
-	"github.com/DataDog/datadog-api-client-go/v2/api/datadog"
-	"github.com/DataDog/datadog-api-client-go/v2/api/datadogV2"
+// Import os to control the process exit code on failure.
+import "os"
 
-	"github.com/joho/godotenv"
-)
+// Import time to timestamp this run.
+import "time"
 
+// Import this module's config package to resolve settings from the environment.
+import "github.com/kevindowdy/custom-datadog-log-forwarder/src/internal/config"
+
+// Import this module's forwarder package, which does the actual work.
+import "github.com/kevindowdy/custom-datadog-log-forwarder/src/internal/forwarder"
+
+// Import this module's datadogclient package to submit logs to Datadog.
+import "github.com/kevindowdy/custom-datadog-log-forwarder/src/utilities/datadogclient"
+
+// Import godotenv to load DD_API_KEY and friends from a local .env file, if present.
+import "github.com/joho/godotenv"
+
+// main loads configuration, runs one forwarder pass, and reports the result.
+//
+// Intended to be invoked on a schedule (e.g. every 1-5 minutes) by cron,
+// Windows Task Scheduler, or similar; each invocation is a single, complete
+// pass over the source log file.
 func main() {
-
-	fmt.Println("Starting the application...")
-
-	err := godotenv.Load()
-
-	body := []datadogV2.HTTPLogItem{
-		{
-			Ddsource: datadog.PtrString("nginx"),
-			Ddtags:   datadog.PtrString("env:staging,version:5.1"),
-			Hostname: datadog.PtrString("i-012345678"),
-			Message:  "2019-11-19T14:37:58,995 INFO [process.name][20081] Hello World",
-			Service:  datadog.PtrString("payment"),
-			AdditionalProperties: map[string]interface{}{
-				"status": "info",
-			},
-		},
-		{
-			Ddsource: datadog.PtrString("nginx"),
-			Ddtags:   datadog.PtrString("env:staging,version:5.1"),
-			Hostname: datadog.PtrString("i-012345678"),
-			Message:  "2026-11-19T14:37:58,995 INFO [process.name][20081] Hello World",
-			Service:  datadog.PtrString("payment"),
-			AdditionalProperties: map[string]interface{}{
-				"status": "info",
-			},
-		},
+	// Load a local .env file, if present; a missing file is not an error.
+	if err := godotenv.Load(); err != nil && !os.IsNotExist(err) {
+		log.Printf("warning: failed to load .env file: %v", err)
 	}
-	ctx := datadog.NewDefaultContext(context.Background())
-	configuration := datadog.NewConfiguration()
-	apiClient := datadog.NewAPIClient(configuration)
-	api := datadogV2.NewLogsApi(apiClient)
-	resp, r, err := api.SubmitLog(ctx, body, *datadogV2.NewSubmitLogOptionalParameters())
 
+	// Resolve the forwarder's configuration from the environment.
+	cfg, err := config.Load()
+	// A configuration error means the forwarder cannot run at all.
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error when calling `LogsApi.SubmitLog`: %v\n", err)
-		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+		log.Fatalf("configuration error: %v", err)
 	}
 
-	responseContent, _ := json.MarshalIndent(resp, "", "  ")
-	fmt.Fprintf(os.Stdout, "Response from `LogsApi.SubmitLog`:\n%s\n", responseContent)
+	// Build the Datadog client, authenticated from DD_API_KEY/DD_SITE.
+	client := datadogclient.New()
+
+	// Run one full forwarder pass: parse new log lines and send them to Datadog.
+	summary, err := forwarder.Run(cfg, client.SubmitLogs, time.Now())
+	// A run error means something needs operator attention (see logged warnings above).
+	if err != nil {
+		log.Fatalf("forwarder run failed: %v", err)
+	}
+
+	// Report a concise summary of what this run accomplished.
+	log.Printf(
+		"forwarder run complete: found %d new log(s), sent %d, skipped %d unparseable line(s)",
+		summary.NewLogsFound, summary.LogsSent, len(summary.Warnings),
+	)
 }

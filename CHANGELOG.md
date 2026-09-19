@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.2.0] - 2026-09-18
 
 ### Added
 
@@ -23,4 +23,4 @@
 
 ### Added
 
-- Initial project template: git commit -m "setup initial forwarder"
+- Initial project template for forwarder

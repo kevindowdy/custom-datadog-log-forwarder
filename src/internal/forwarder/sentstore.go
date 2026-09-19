@@ -4,6 +4,9 @@ package forwarder
 // Import bufio to read the tracking file one ID per line.
 import "bufio"
 
+// Import errors to check for a wrapped os.ErrNotExist with errors.Is.
+import "errors"
+
 // Import fmt to build descriptive error messages.
 import "fmt"
 
@@ -52,7 +55,8 @@ func (s SentStore) Load() (map[string]struct{}, error) {
 	file, err := os.Open(s.path)
 	// Treat "file does not exist" as an empty, valid result rather than an error.
 	if err != nil {
-		if os.IsNotExist(err) {
+		// Use errors.Is (not os.IsNotExist) so a wrapped error is still matched.
+		if errors.Is(err, os.ErrNotExist) {
 			return sent, nil
 		}
 		// Any other error (permissions, I/O) is unexpected and must surface.
@@ -126,7 +130,8 @@ func PruneOldSentFiles(dir string, retention time.Duration, now time.Time) error
 	entries, err := os.ReadDir(dir)
 	// Treat a missing directory as "nothing to prune" rather than an error.
 	if err != nil {
-		if os.IsNotExist(err) {
+		// Use errors.Is (not os.IsNotExist) so a wrapped error is still matched.
+		if errors.Is(err, os.ErrNotExist) {
 			return nil
 		}
 		return fmt.Errorf("read sent-log tracking directory %s: %w", dir, err)
@@ -150,7 +155,8 @@ func PruneOldSentFiles(dir string, retention time.Duration, now time.Time) error
 			continue
 		}
 		// Remove the tracking file; a delete race with another process is not fatal.
-		if err := os.Remove(filepath.Join(dir, entry.Name())); err != nil && !os.IsNotExist(err) {
+		// Use errors.Is (not os.IsNotExist) so a wrapped error is still matched.
+		if err := os.Remove(filepath.Join(dir, entry.Name())); err != nil && !errors.Is(err, os.ErrNotExist) {
 			return fmt.Errorf("remove old sent-log tracking file %s: %w", entry.Name(), err)
 		}
 	}

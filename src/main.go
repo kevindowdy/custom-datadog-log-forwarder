@@ -1,6 +1,9 @@
 // Package main is the entrypoint for the application binary.
 package main
 
+// Import errors to check for a wrapped os.ErrNotExist with errors.Is.
+import "errors"
+
 // Import log to report the run's outcome and any fatal startup error.
 import "log"
 
@@ -29,7 +32,8 @@ import "github.com/joho/godotenv"
 // pass over the source log file.
 func main() {
 	// Load a local .env file, if present; a missing file is not an error.
-	if err := godotenv.Load(); err != nil && !os.IsNotExist(err) {
+	// Use errors.Is (not os.IsNotExist) so a wrapped error is still matched.
+	if err := godotenv.Load(); err != nil && !errors.Is(err, os.ErrNotExist) {
 		log.Printf("warning: failed to load .env file: %v", err)
 	}
 

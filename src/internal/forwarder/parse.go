@@ -5,6 +5,9 @@ package forwarder
 // Import bufio to read the source log file efficiently, line by line.
 import "bufio"
 
+// Import errors to check for a wrapped os.ErrNotExist with errors.Is.
+import "errors"
+
 // Import fmt to build descriptive warning/error messages.
 import "fmt"
 
@@ -45,7 +48,8 @@ func ParseLogs(cfg config.Config, alreadySent map[string]struct{}, now time.Time
 	lines, err := readCompleteLines(logPath)
 	// A missing log file simply means the source app hasn't written today's file yet.
 	if err != nil {
-		if os.IsNotExist(err) {
+		// Use errors.Is (not os.IsNotExist) so a wrapped error is still matched.
+		if errors.Is(err, os.ErrNotExist) {
 			return ParseResult{}, nil
 		}
 		// Any other read failure is unexpected and must surface to the caller.

@@ -1,6 +1,9 @@
 // Package forwarder tests for the per-day "already sent" tracking store.
 package forwarder
 
+// Import errors to check for a wrapped os.ErrNotExist with errors.Is.
+import "errors"
+
 // Import os for filesystem setup in tests.
 import "os"
 
@@ -108,7 +111,7 @@ func TestPruneOldSentFilesRemovesOnlyStaleFiles(t *testing.T) {
 		t.Fatalf("unexpected error pruning: %v", err)
 	}
 	// The old tracking file must be gone.
-	if _, err := os.Stat(oldPath); !os.IsNotExist(err) {
+	if _, err := os.Stat(oldPath); !errors.Is(err, os.ErrNotExist) {
 		t.Errorf("expected old tracking file to be pruned, stat err = %v", err)
 	}
 	// The recent tracking file must still exist.

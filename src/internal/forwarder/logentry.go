@@ -3,16 +3,17 @@
 package forwarder
 
 // Import encoding/json to decode each log line written by the source app.
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
 
-// Import fmt to build descriptive parse-error messages.
-import "fmt"
+	"github.com/DataDog/datadog-api-client-go/v2/api/datadog"
+	"github.com/DataDog/datadog-api-client-go/v2/api/datadogV2"
+) // Import fmt to build descriptive parse-error messages.
 
 // Import the Datadog API types for the outbound log item shape.
-import "github.com/DataDog/datadog-api-client-go/v2/api/datadog"
 
 // Import the Datadog v2 API types for the outbound log item shape.
-import "github.com/DataDog/datadog-api-client-go/v2/api/datadogV2"
 
 // LogEntry mirrors one JSON log line written by the source application.
 type LogEntry struct {
@@ -25,7 +26,7 @@ type LogEntry struct {
 	// Message is the human-readable log message.
 	Message string `json:"message"`
 	// Application is the name of the app that produced the line.
-	Application string `json:"application"`
+	Application string `json:"app"`
 }
 
 // ParsedLog pairs a Datadog log item with the source LogID used for dedup bookkeeping.
@@ -90,7 +91,7 @@ func (e LogEntry) toHTTPLogItem(t tags) datadogV2.HTTPLogItem {
 			// Preserve the original level as a facet distinct from Datadog's own status.
 			"level": e.Level,
 			// Preserve the source application's own timestamp string as reported.
-			"source_timestamp": e.Timestamp,
+			"timestamp": e.Timestamp,
 		},
 	}
 	// Attach ddtags only when the caller configured one, to avoid an empty tag string.

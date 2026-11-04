@@ -1,9 +1,16 @@
 # Changelog
 
+## [0.2.1] - 2026-11-04
+
+### Changed
+- Attribute source logs used in LogEntry (application -> app and source_timestamp -> timestamp)
+
+### Added 
+- Build instructions for Windows environment
+
 ## [0.2.0] - 2026-09-18
 
 ### Added
-
 - Implemented the forwarder: `internal/forwarder` parses the source log
   file (JSON lines with a `log_id` field), skips lines already recorded as
   sent in a per-day dedup tracking file, batches the rest by item

@@ -93,6 +93,13 @@ go build -o bin/forwarder ./src
 ./bin/forwarder
 ```
 
+Build a binary as a Windows application so shell window doesn't open when running directly:
+
+```sh
+go build -ldflags="-H=windowsgui" -o myprogram.exe ./src/main.go
+myprogram.exe
+```
+
 Schedule it (e.g. via cron) to run every 1-5 minutes; each run is a
 single, complete, idempotent pass.
 

@@ -68,21 +68,11 @@ type tags struct {
 
 // toHTTPLogItem converts a LogEntry into the Datadog API's log item shape.
 func (e LogEntry) toHTTPLogItem(t tags) datadogV2.HTTPLogItem {
-	// Determine the ddsource: an explicit override, or the entry's application name.
-	source := t.source
-	// Fall back to the entry's application field when no override is configured.
-	if source == "" {
-		source = e.Application
-	}
-	// Determine the service: an explicit override, or the entry's application name.
-	service := t.service
-	// Fall back to the entry's application field when no override is configured.
-	if service == "" {
-		service = e.Application
-	}
+	service := e.Application
+
 	// Build the log item using the message as the primary body text.
 	item := datadogV2.HTTPLogItem{
-		Ddsource: datadog.PtrString(source),
+		Ddsource: datadog.PtrString(service),
 		Service:  datadog.PtrString(service),
 		Message:  e.Message,
 		AdditionalProperties: map[string]interface{}{

@@ -2,16 +2,18 @@
 package config
 
 // Import fmt to build descriptive error messages.
-import "fmt"
+import (
+	"fmt"
+	"os"
+	"strconv"
+	"time"
+)
 
 // Import os to read environment variables.
-import "os"
 
 // Import strconv to parse integer environment variables.
-import "strconv"
 
 // Import time to express the retention window as a duration.
-import "time"
 
 // defaultLogsSentDir is used when LOGS_SENT_DIR is not set.
 const defaultLogsSentDir = "./logs_sent"
@@ -116,8 +118,8 @@ func Load() (Config, error) {
 		LogFileNamePattern: logFileNamePattern,
 		LogsSentDir:        logsSentDir,
 		LogsSentRetention:  time.Duration(retentionDays) * 24 * time.Hour,
-		DDSource:           os.Getenv("DD_LOG_SOURCE"),
-		DDService:          os.Getenv("DD_LOG_SERVICE"),
+		DDSource:           "",
+		DDService:          "",
 		DDTags:             os.Getenv("DD_LOG_TAGS"),
 		DDHostname:         os.Getenv("DD_LOG_HOSTNAME"),
 		BatchMaxItems:      batchMaxItems,

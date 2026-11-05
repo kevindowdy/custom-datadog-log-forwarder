@@ -3,28 +3,29 @@
 package forwarder
 
 // Import bufio to read the source log file efficiently, line by line.
-import "bufio"
+import (
+	"bufio"
+	"errors"
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+	"time"
 
-// Import errors to check for a wrapped os.ErrNotExist with errors.Is.
-import "errors"
+	"github.com/kevindowdy/custom-datadog-log-forwarder/src/internal/config"
+) // Import errors to check for a wrapped os.ErrNotExist with errors.Is.
 
 // Import fmt to build descriptive warning/error messages.
-import "fmt"
 
 // Import io to detect end-of-file while reading.
-import "io"
 
 // Import os for file I/O and existence checks.
-import "os"
 
 // Import path/filepath to join the plain log directory with today's file name.
-import "path/filepath"
 
 // Import time to resolve today's log file name and stamp warnings.
-import "time"
 
 // Import this module's config package for the resolved settings type.
-import "github.com/kevindowdy/custom-datadog-log-forwarder/src/internal/config"
 
 // ParseResult is everything ParseLogs produces from one pass over the log file.
 type ParseResult struct {
@@ -83,6 +84,7 @@ func ParseLogs(cfg config.Config, alreadySent map[string]struct{}, now time.Time
 		if _, ok := alreadySent[entry.LogID]; ok {
 			continue
 		}
+
 		// Convert the entry into a Datadog log item paired with its log_id.
 		result.Logs = append(result.Logs, ParsedLog{
 			Item:  entry.toHTTPLogItem(itemTags),

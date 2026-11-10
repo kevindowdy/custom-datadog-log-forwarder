@@ -29,6 +29,14 @@ type LogEntry struct {
 	Application string `json:"app"`
 }
 
+// UiPath log shape
+type UiPathLog struct {
+	Message     string `json:"message"`
+	Level       string `json:"level"`
+	FileName    string `json:"fileName"`
+	ProcessName string `json:"processName"`
+}
+
 // ParsedLog pairs a Datadog log item with the source LogID used for dedup bookkeeping.
 type ParsedLog struct {
 	// Item is the Datadog log item ready to submit.
@@ -68,22 +76,56 @@ type tags struct {
 
 // toHTTPLogItem converts a LogEntry into the Datadog API's log item shape.
 func (e LogEntry) toHTTPLogItem(t tags) datadogV2.HTTPLogItem {
+
+	item := datadogV2.HTTPLogItem{}
+
+	// Check if the service is set (if not, the log is likely fully coming from UiPath)
 	service := e.Application
 
-	// Build the log item using the message as the primary body text.
-	item := datadogV2.HTTPLogItem{
-		Ddsource: datadog.PtrString(service),
-		Service:  datadog.PtrString(service),
-		Message:  e.Message,
-		AdditionalProperties: map[string]interface{}{
-			// Preserve the log_id on the forwarded log for cross-referencing in Datadog.
-			"log_id": e.LogID,
-			// Preserve the original level as a facet distinct from Datadog's own status.
-			"level": e.Level,
-			// Preserve the source application's own timestamp string as reported.
-			"timestamp": e.Timestamp,
-		},
+	// UiPath logs include nested structure incompatiible with fully custom log structure
+	// exception to extract the inner message also and build the
+	if service == "" {
+
+		var log UiPathLog
+
+		if err := json.Unmarshal([]byte(e.Message), &log); err != nil {
+			fmt.Println("Error parsing message:", err)
+		}
+
+		// Build the log item using the message as the primary body text.
+		item = datadogV2.HTTPLogItem{
+			Ddsource: datadog.PtrString(log.ProcessName),
+			Service:  datadog.PtrString(log.ProcessName),
+			Message:  log.Message,
+			AdditionalProperties: map[string]interface{}{
+				// Preserve the log_id on the forwarded log for cross-referencing in Datadog.
+				"log_id": e.LogID,
+				// Preserve the original level as a facet distinct from Datadog's own status.
+				"level": e.Level,
+				// Preserve the source application's own timestamp string as reported.
+				"timestamp": e.Timestamp,
+			},
+		}
+
+	} else {
+
+		// Build the log item using the message as the primary body text.
+		item = datadogV2.HTTPLogItem{
+			Ddsource: datadog.PtrString(service),
+			Service:  datadog.PtrString(service),
+			Message:  e.Message,
+			AdditionalProperties: map[string]interface{}{
+				// Preserve the log_id on the forwarded log for cross-referencing in Datadog.
+				"log_id": e.LogID,
+				// Preserve the original level as a facet distinct from Datadog's own status.
+				"level": e.Level,
+				// Preserve the source application's own timestamp string as reported.
+				"timestamp": e.Timestamp,
+			},
+		}
+
 	}
+
 	// Attach ddtags only when the caller configured one, to avoid an empty tag string.
 	if t.ddtags != "" {
 		item.Ddtags = datadog.PtrString(t.ddtags)

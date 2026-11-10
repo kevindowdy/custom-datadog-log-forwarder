@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.3.0] - 2026-11-10
+
+### Added
+- New log struct for UiPath logs that required custom parsing.
+
 ## [0.2.1] - 2026-11-04
 
 ### Changed
